@@ -1,0 +1,24 @@
+name: CPU validation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  cpu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: >-
+          cmake -S . -B build/cpu
+          -DCMAKE_BUILD_TYPE=Release
+          -DFEDSPATIAL_ENABLE_MPI=OFF
+          -DFEDSPATIAL_ENABLE_CUDA=OFF
+      - name: Build
+        run: cmake --build build/cpu --parallel 2
+      - name: Test
+        run: ctest --test-dir build/cpu --output-on-failure

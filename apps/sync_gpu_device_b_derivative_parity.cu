@@ -1,0 +1,11 @@
+#include "fedspatial/gpu_context.hpp"
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+using namespace fedspatial;
+static double rel(const Matrix& a,const Matrix& b){double e=0.;for(size_t i=0;i<a.a.size();++i)e=std::max(e,std::abs(a.a[i]-b.a[i])/std::max(1.,std::abs(b.a[i])));return e;}
+int main(){
+  Matrix s(3,2),z(3,1),x(3,1),k(2,2),g(1,1),mu(2,1),sg(2,2);double sv[]={0,0,1,.2,.3,1.1},kv[]={0,0,1.5,1.5};
+  for(int i=0;i<6;i++)s.a[i]=sv[i];for(int i=0;i<4;i++)k.a[i]=kv[i];for(double&v:x.a)v=1.;g(0,0)=.15;mu(0,0)=.2;mu(1,0)=-.1;sg(0,0)=.7;sg(1,1)=.4;sg(0,1)=sg(1,0)=.05;
+  try{WorkerInput w{s,z,x};GlobalParameters p{g,mu,sg,1.7,1.2,.8};GpuContext c(0);c.bind_region(w,k);auto cpu=compute_b_second_derivatives(c,w,k,p);const auto raw=c.raw_h2d_bytes(),d2h=c.result_d2h_bytes();auto ds=compute_device_b_derivatives(c,3,1.2,.8);const auto raw_after=c.raw_h2d_bytes(),d2h_device=c.result_d2h_bytes();auto gpu=download_device_b_derivatives(c,ds);auto repeat_slice=compute_device_b_derivatives(c,3,1.2,.8);const auto d2h_repeat_device=c.result_d2h_bytes();auto repeat=download_device_b_derivatives(c,repeat_slice);double eaa=max_abs_diff(cpu.baa,gpu.baa),ear=max_abs_diff(cpu.bar,gpu.bar),era=max_abs_diff(cpu.bra,gpu.bra),err=max_abs_diff(cpu.brr,gpu.brr),repeat_error=std::max({max_abs_diff(gpu.baa,repeat.baa),max_abs_diff(gpu.bar,repeat.bar),max_abs_diff(gpu.bra,repeat.bra),max_abs_diff(gpu.brr,repeat.brr)});double rmax=std::max({rel(cpu.baa,gpu.baa),rel(cpu.bar,gpu.bar),rel(cpu.bra,gpu.bra),rel(cpu.brr,gpu.brr)});bool ok=std::max({eaa,ear,era,err})<1e-11&&repeat_error==0.&&raw==raw_after&&d2h==d2h_device&&d2h_repeat_device==c.result_d2h_bytes()-4*3*2*sizeof(double);std::cout<<"B_AA_ABS="<<eaa<<" B_AR_ABS="<<ear<<" B_RA_ABS="<<era<<" B_RR_ABS="<<err<<" MAX_REL="<<rmax<<" REPEAT_ABS="<<repeat_error<<"\nRAW_H2D_BEFORE="<<raw<<" RAW_H2D_AFTER_DEVICE="<<raw_after<<" RESULT_D2H_BEFORE="<<d2h<<" RESULT_D2H_AFTER_DEVICE="<<d2h_device<<" RESULT_D2H_AFTER_REPEAT_DEVICE="<<d2h_repeat_device<<" RESULT_D2H_AFTER_ORACLE_DOWNLOADS="<<c.result_d2h_bytes()<<"\nDEVICE_B_DERIVATIVE_PARITY="<<(ok?"PASS":"FAIL")<<'\n';return ok?0:1;}catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 2;}
+}

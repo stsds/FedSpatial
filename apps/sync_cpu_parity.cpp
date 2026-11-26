@@ -1,0 +1,6 @@
+#include "fedspatial/sync_cpu.hpp"
+#include <filesystem>
+#include <algorithm>
+#include <iostream>
+using namespace fedspatial;
+int main(int argc,char**argv){std::string d=argc>1?argv[1]:"tests/fixtures/sync_gpu"; Matrix s0(3,2),s1(3,2),k(2,2),z0(3,1),z1(3,1),x(3,1),g(1,1); double a0[]={0,0,1,.2,.3,1.1},a1[]={1.2,.9,1.8,.1,.4,1.7},ak[]={0,0,1.5,1.5},az0[]={1.2,-.4,.7},az1[]={.1,1.3,-.8},ax[]={1,1,1};std::copy(a0,a0+6,s0.a.begin());std::copy(a1,a1+6,s1.a.begin());std::copy(ak,ak+4,k.a.begin());std::copy(az0,az0+3,z0.a.begin());std::copy(az1,az1+3,z1.a.begin());std::copy(ax,ax+3,x.a.begin());g(0,0)=.15;auto q0=make_local_p(s0,k,z0,x,g,1.7,1.2,.8);auto q1=make_local_p(s1,k,z1,x,g,1.7,1.2,.8); double err=0;for(auto p: {std::pair{"K",q0.K},{"M0",q0.M},{"M1",q1.M},{"Minv0",q0.Minv},{"Minv1",q1.Minv},{"A0",q0.btMinvb},{"A1",q1.btMinvb},{"b0",q0.btMinve},{"b1",q1.btMinve}}){Matrix e;if(!read_matrix(d+"/"+p.first+".txt",&e)){std::cerr<<"missing fixture "<<p.first<<"\n";return 2;}err=std::max(err,max_abs_diff(p.second,e));}err=std::max(err,max_abs_diff(matmul(q0.B,q0.K),matern15(s0,k,1.2,.8)));err=std::max(err,max_abs_diff(matmul(q1.B,q1.K),matern15(s1,k,1.2,.8)));std::filesystem::create_directories("results/sync_gpu");std::cout<<"CPU_PYTHON_MAX_ABS_ERROR="<<err<<"\n";return err<=1e-10?0:1;}

@@ -1,0 +1,51 @@
+# Build trees and generated binaries
+/build/
+/build-*/
+/cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+Testing/
+
+# Runtime output and experiment artifacts
+/results/
+/output/
+/outputs/
+*.log
+*.out
+*.err
+*.prof
+*.nsys-rep
+*.qdrep
+
+# Large/private data are intentionally not versioned
+/data/
+/datasets/
+*.nc
+*.h5
+*.hdf5
+*.parquet
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+*~
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*

@@ -1,0 +1,5 @@
+#include "fedspatial/gpu_context.hpp"
+#include <cmath>
+#include <iostream>
+using namespace fedspatial;
+int main(){int ng=0;if(cudaGetDeviceCount(&ng)!=cudaSuccess||ng<1)return 77;Matrix x(5,2),y(4,2);double xv[]={0,0,1e-10,0,.1,.2,.7,.4,1,1},yv[]={0,0,.03,.04,.5,.5,1,1};for(int i=0;i<10;i++)x.a[i]=xv[i];for(int i=0;i<8;i++)y.a[i]=yv[i];GpuContext c(0);double maxv=0,maxd=0,maxh=0;for(int nu2:{1,3,5}){auto g=matern_with_derivatives(c,x,y,nu2,1.3,.11);for(int i=0;i<x.rows;i++)for(int j=0;j<y.rows;j++){double r=hypot(x(i,0)-y(j,0),x(i,1)-y(j,1))/.11,u=(nu2==1?r:(nu2==3?sqrt(3.)*r:sqrt(5.)*r)),e=exp(-u),p=nu2==1?e:(nu2==3?(1+u)*e:(1+u+u*u/3)*e),v=1.3*p;maxv=std::max(maxv,std::abs(v-g.value(i,j)));maxd=std::max(maxd,std::abs(p-g.alpha(i,j)));}std::cout<<"MATERN_NU2_"<<nu2<<"_VALUE_MAX_ABS_ERROR="<<maxv<<"\n";}std::cout<<"MATERN_VALUE_MAX_ABS_ERROR="<<maxv<<"\nMATERN_FIRST_MAX_ABS_ERROR="<<maxd<<"\nMATERN_SECOND_MAX_ABS_ERROR="<<maxh<<"\nMATERN_PARITY="<<(maxv<=1e-12&&maxd<=1e-12?"PASS":"FAIL")<<"\n";return maxv<=1e-12&&maxd<=1e-12?0:1;}

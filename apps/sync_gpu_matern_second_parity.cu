@@ -1,0 +1,6 @@
+#include "fedspatial/gpu_context.hpp"
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+using namespace fedspatial;
+int main(){Matrix x(4,2),y(3,2);double a[]={0,0,1e-10,0,.2,.3,.8,.7},b[]={0,0,.1,.2,.9,.9};for(int i=0;i<8;i++)x.a[i]=a[i];for(int i=0;i<6;i++)y.a[i]=b[i];GpuContext c(0);std::ofstream out("results/figure1_cpp_gpu_faithful/parity/matern_second_derivative_parity.csv");out<<"nu2,quantity,max_abs_error\n";double all=0;for(int nu:{1,3,5}){auto d=matern_with_derivatives(c,x,y,nu,1.3,.11);double eaa=0,ear=0,err=0;for(int i=0;i<x.rows;i++)for(int j=0;j<y.rows;j++){double r=hypot(x(i,0)-y(j,0),x(i,1)-y(j,1))/.11,u=nu==1?r:(nu==3?sqrt(3.)*r:sqrt(5.)*r),ex=exp(-u),aa=0,ar=nu==1?u*ex/.11:(nu==3?u*u*ex/.11:(u*u+u*u*u)*ex/(3*.11)),rr=nu==1?1.3*ex*(u*u-2*u)/(.11*.11):(nu==3?1.3*ex*(u*u*u-3*u*u)/(.11*.11):1.3*ex*(u*u*u*u-3*u*u*u-3*u*u)/(3*.11*.11));eaa=std::max(eaa,std::abs(d.aa(i,j)-aa));ear=std::max(ear,std::abs(d.ar(i,j)-ar));err=std::max(err,std::abs(d.rr(i,j)-rr));}out<<nu<<",alpha-alpha,"<<eaa<<"\n"<<nu<<",alpha-beta,"<<ear<<"\n"<<nu<<",beta-beta,"<<err<<"\n";std::cout<<"MATERN_SECOND_NU2="<<nu<<" AA="<<eaa<<" AR="<<ear<<" RR="<<err<<"\n";all=std::max({all,eaa,ear,err});}const bool pass=all<=1e-12;std::cout<<"MATERN_SECOND_MAX_ERROR="<<all<<"\nMATERN_SECOND_DERIVATIVE_PARITY="<<(pass?"PASS":"FAIL")<<"\n";return pass?0:1;}
